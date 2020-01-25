@@ -11,6 +11,11 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
+from dotenv import load_dotenv
+import dj_database_url
+import django_heroku
+
+load_dotenv()  # enables us to use env vars using python-dotenv library
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -20,12 +25,16 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '#wnd$%ca#n^0$8fi=u4ahxe&4cc9y#2j^accrdlc9ht%*_-ns6'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'django-visualizer.herokuapp.com'
+]
 
 
 # Application definition
@@ -75,8 +84,12 @@ WSGI_APPLICATION = 'dj_chart_tutorial.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'NAME': 'dj_chart_tutorial',
+        'ENGINE': 'django.db.backends.postgresql',
+        'USER': 'postgres',
+        'PASSWORD': str(os.getenv('DATABASE_PASSWORD')),
+        'HOST': '',
+        'PORT': 5432
     }
 }
 
@@ -84,28 +97,32 @@ DATABASES = {
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
 
+# for stylistic purposes, this section was formatted differently from default
+VALIDATOR_1 = (
+    'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'
+)
+VALIDATOR_2 = (
+    'django.contrib.auth.password_validation.MinimumLengthValidator'
+)
+VALIDATOR_3 = (
+    'django.contrib.auth.password_validation.CommonPasswordValidator'
+)
+VALIDATOR_4 = (
+    'django.contrib.auth.password_validation.NumericPasswordValidator'
+)
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': VALIDATOR_1},
+    {'NAME': VALIDATOR_2},
+    {'NAME': VALIDATOR_3},
+    {'NAME': VALIDATOR_4},
 ]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Los_Angeles'
 
 USE_I18N = True
 
@@ -118,3 +135,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# STATIC_ROOT needed to deploy to Heroku, without disabling collectstatic
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+db_from_env = dj_database_url.config()
+DATABASES['default'].update(db_from_env)
+
+# final piece for deployment
+django_heroku.settings(locals())
